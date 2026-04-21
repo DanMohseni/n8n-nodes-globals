@@ -1,4 +1,4 @@
-import { splitConstants, setDeepValue } from '../credentials/CredentialsUtils';
+import { splitConstants, setDeepValue, flattenObject } from '../credentials/CredentialsUtils';
 
 describe('CredentialsUtils', () => {
   describe('splitConstants', () => {
@@ -92,6 +92,26 @@ CONSTANT3=value3
         CONSTANT3: 'value3',
       });
     });
+
+    it('should handle dot notation for nested keys', () => {
+      const input = `
+user.name=Dan
+user.age=30
+config.database.host=localhost
+      `.trim();
+      const result = splitConstants(input);
+      expect(result).toEqual({
+        user: {
+          name: 'Dan',
+          age: '30',
+        },
+        config: {
+          database: {
+            host: 'localhost',
+          },
+        },
+      });
+    });
   });
 
   describe('setDeepValue', () => {
@@ -123,6 +143,33 @@ CONSTANT3=value3
       const obj = { a: 'not-an-object' };
       setDeepValue(obj, 'a.b', 'value');
       expect(obj).toEqual({ a: { b: 'value' } });
+    });
+  });
+
+  describe('flattenObject', () => {
+    it('should flatten a nested object', () => {
+      const obj = {
+        user: {
+          name: 'Dan',
+          age: 30,
+        },
+        config: {
+          database: {
+            host: 'localhost',
+          },
+        },
+      };
+      const result = flattenObject(obj);
+      expect(result).toEqual({
+        'user.name': 'Dan',
+        'user.age': 30,
+        'config.database.host': 'localhost',
+      });
+    });
+
+    it('should handle simple objects', () => {
+      const obj = { a: 1, b: 2 };
+      expect(flattenObject(obj)).toEqual({ a: 1, b: 2 });
     });
   });
 });

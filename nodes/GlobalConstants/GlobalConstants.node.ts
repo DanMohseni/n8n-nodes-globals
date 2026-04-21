@@ -1,6 +1,6 @@
-import { IExecuteFunctions, INodeExecutionData, INodeType, INodeTypeDescription } from 'n8n-workflow';
+import { IExecuteFunctions, INodeExecutionData, INodeType, INodeTypeDescription, IHttpRequestOptions } from 'n8n-workflow';
 import { GLOBAL_CONSTANTS_CREDENTIALS_NAME, GlobalConstantsCredentialsData } from '../../credentials/GlobalConstantsCredentials.credentials';
-import { splitConstants, setDeepValue } from '../../credentials/CredentialsUtils';
+import { splitConstants, setDeepValue, flattenObject } from '../../credentials/CredentialsUtils';
 
 
 export class GlobalConstants implements INodeType {
@@ -22,6 +22,16 @@ export class GlobalConstants implements INodeType {
       {
         name: GLOBAL_CONSTANTS_CREDENTIALS_NAME,
         required: true,
+      },
+      {
+        name: 'n8nApi',
+        required: true,
+        displayOptions: {
+          show: {
+            resource: ['globalConstant'],
+            operation: ['update'],
+          },
+        },
       }
     ],
     properties: [
@@ -192,7 +202,7 @@ export class GlobalConstants implements INodeType {
     const iterationCount = items.length || 1;
 
     for (let i = 0; i < iterationCount; i++) {
-      const resource = this.getNodeParameter('resource', i, 'globalConstant') as string;
+      // const resource = this.getNodeParameter('resource', i, 'globalConstant') as string;
       const operation = this.getNodeParameter('operation', i, 'get') as string;
 
       let constantsData : {[key: string]: any} = {};
@@ -229,6 +239,52 @@ export class GlobalConstants implements INodeType {
               setDeepValue(constantsData, key, value);
             }
           }
+        }
+
+        // Persist the changes via n8n REST API
+        const nodeCredentials = this.getNode().credentials;
+        if (!nodeCredentials || !nodeCredentials[GLOBAL_CONSTANTS_CREDENTIALS_NAME]) {
+          throw new Error('Global Constants credential not found or ID is missing.');
+        }
+
+        const credentialId = nodeCredentials[GLOBAL_CONSTANTS_CREDENTIALS_NAME].id;
+        const credentialName = nodeCredentials[GLOBAL_CONSTANTS_CREDENTIALS_NAME].name;
+
+        if (credentialId) {
+          const n8nApiCreds = await this.getCredentials('n8nApi');
+          const apiKey = n8nApiCreds.apiKey as string;
+          const baseUrl = ((n8nApiCreds.baseUrl as string) || this.getInstanceBaseUrl()).replace(/\/$/, '');
+
+          let newGlobalConstantsString = '';
+          if (credentials.format === 'json') {
+            newGlobalConstantsString = JSON.stringify(constantsData, null, 2);
+          } else {
+            const flattened = flattenObject(constantsData);
+            newGlobalConstantsString = Object.entries(flattened)
+              .map(([k, v]) => {
+                const valueStr = typeof v === 'object' ? JSON.stringify(v) : v;
+                return `${k}=${valueStr}`;
+              })
+              .join('\n');
+          }
+
+          const requestOptions: IHttpRequestOptions = {
+            method: 'PUT',
+            url: `${baseUrl}/api/v1/credentials/${credentialId}`,
+            headers: {
+              'X-N8N-API-KEY': apiKey,
+            },
+            body: {
+              name: credentialName,
+              data: {
+                format: credentials.format,
+                globalConstants: newGlobalConstantsString,
+              },
+            },
+            json: true,
+          };
+
+          await this.helpers.httpRequest(requestOptions);
         }
       }
 
