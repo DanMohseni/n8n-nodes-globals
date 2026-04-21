@@ -1,29 +1,40 @@
-export function splitConstants(globalConstantsMultiline: string): { [key: string]: any } {
+export function splitConstants(globalConstants: string | object): { [key: string]: any } {
+  if (typeof globalConstants === 'object' && globalConstants !== null) {
+    return globalConstants as { [key: string]: any };
+  }
+
+  if (typeof globalConstants !== 'string') {
+    return {};
+  }
+
+  const trimmed = globalConstants.trim();
+  if (!trimmed) {
+    return {};
+  }
 
   // Check if the string is a JSON object
   try {
-    const jsonObj = JSON.parse(globalConstantsMultiline.trim());
-    return jsonObj as { [key: string]: any };
+    const jsonObj = JSON.parse(trimmed);
+    if (typeof jsonObj === 'object' && jsonObj !== null) {
+      return jsonObj as { [key: string]: any };
+    }
   } catch (e) {
     // Not a JSON object, continue with the old logic
-    const lines = globalConstantsMultiline.split('\n');
-    var retArr: { [key: string]: any } = {};
-    for (const line of lines) {
-      // trim the line
-      const constant = line.trim();
-      if (!constant) {
-        continue;
-      }
-      // skip if it doesn't contain "="
-      if (!constant.includes('=')) {
-        continue;
-      }
-      // split only first "=" to allow values with "=" in them
-      const [name, ...value] = constant.split('=');
-      setDeepValue(retArr, name.trim(), value.join('=').trim());
-    }
-    return retArr;
   }
+
+  const lines = trimmed.split('\n');
+  const retArr: { [key: string]: any } = {};
+  for (const line of lines) {
+    // trim the line
+    const constant = line.trim();
+    if (!constant || !constant.includes('=')) {
+      continue;
+    }
+    // split only first "=" to allow values with "=" in them
+    const [name, ...value] = constant.split('=');
+    setDeepValue(retArr, name.trim(), value.join('=').trim());
+  }
+  return retArr;
 }
 
 export function setDeepValue(obj: any, path: string, value: any): void {

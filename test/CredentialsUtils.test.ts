@@ -93,6 +93,15 @@ CONSTANT3=value3
       });
     });
 
+    it('should handle object input', () => {
+      const input = {
+        CONSTANT1: 'value1',
+        OBJECT: { key: 'value' },
+      };
+      const result = splitConstants(input);
+      expect(result).toEqual(input);
+    });
+
     it('should handle dot notation for nested keys', () => {
       const input = `
 user.name=Dan

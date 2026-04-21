@@ -44,7 +44,7 @@ export class GlobalConstantsCredentials implements ICredentialType {
 		},
 		{
 			displayName: 'Global Constants',
-			name: 'globalConstants',
+			name: 'globalConstantsJson',
 			type: 'json',
 			default: '{}',
 			hint: 'Provide your constants as a JSON object. Example: { "obj": { "key": "value" }, "list": ["value1", "value2"] }',
@@ -59,5 +59,6 @@ export class GlobalConstantsCredentials implements ICredentialType {
 
 export interface GlobalConstantsCredentialsData {
 	format: 'string' | 'json';
-	globalConstants: string;
+	globalConstants?: string;
+	globalConstantsJson?: object;
 }

@@ -198,11 +198,17 @@ export class GlobalConstants implements INodeType {
       throw new Error(`Node does not have any credentials set for "${GLOBAL_CONSTANTS_CREDENTIALS_NAME}". Please ensure a "Global Constants" credential is selected.`);
     }
 
-    if (!credentials || !credentials.globalConstants) {
-      throw new Error(`Credential "${GLOBAL_CONSTANTS_CREDENTIALS_NAME}" is missing the "globalConstants" field.`);
+    if (!credentials) {
+      throw new Error(`Credential "${GLOBAL_CONSTANTS_CREDENTIALS_NAME}" is missing.`);
     }
 
-    const globalConstantsFromCreds = splitConstants(credentials.globalConstants);
+    const rawConstants = credentials.format === 'json' ? credentials.globalConstantsJson : credentials.globalConstants;
+    
+    if (rawConstants === undefined || rawConstants === null) {
+        throw new Error(`Credential "${GLOBAL_CONSTANTS_CREDENTIALS_NAME}" is missing the constants field for format "${credentials.format}".`);
+    }
+
+    const globalConstantsFromCreds = splitConstants(rawConstants);
 
     const iterationCount = items.length || 1;
 
@@ -260,12 +266,15 @@ export class GlobalConstants implements INodeType {
           const apiKey = n8nApiCreds.apiKey as string;
           const baseUrl = ((n8nApiCreds.baseUrl as string) || this.getInstanceBaseUrl()).replace(/\/$/, '');
 
-          let newGlobalConstantsString = '';
+          const updateData: any = {
+            format: credentials.format,
+          };
+
           if (credentials.format === 'json') {
-            newGlobalConstantsString = JSON.stringify(constantsData, null, 2);
+            updateData.globalConstantsJson = constantsData;
           } else {
             const flattened = flattenObject(constantsData);
-            newGlobalConstantsString = Object.entries(flattened)
+            updateData.globalConstants = Object.entries(flattened)
               .map(([k, v]) => {
                 const valueStr = typeof v === 'object' ? JSON.stringify(v) : v;
                 return `${k}=${valueStr}`;
@@ -281,10 +290,7 @@ export class GlobalConstants implements INodeType {
             },
             body: {
               name: credentialName,
-              data: {
-                format: credentials.format,
-                globalConstants: newGlobalConstantsString,
-              },
+              data: updateData,
             },
             json: true,
           };
