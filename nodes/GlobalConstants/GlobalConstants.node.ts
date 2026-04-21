@@ -25,7 +25,8 @@ export class GlobalConstants implements INodeType {
       },
       {
         name: 'n8nApi',
-      }
+        required: true,
+      },
     ],
     properties: [
       {
@@ -291,7 +292,11 @@ export class GlobalConstants implements INodeType {
           try {
             await this.helpers.httpRequest(requestOptions);
           } catch (error) {
-            throw new Error(`Failed to update credential at ${requestOptions.url}: ${error.message}`);
+            let errorMessage = error.message;
+            if (error.response && error.response.data) {
+              errorMessage = `${error.message} - ${JSON.stringify(error.response.data)}`;
+            }
+            throw new Error(`Failed to update credential at ${requestOptions.url}: ${errorMessage}`);
           }
         }
       }
