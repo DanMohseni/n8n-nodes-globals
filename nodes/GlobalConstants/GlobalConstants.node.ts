@@ -26,11 +26,6 @@ export class GlobalConstants implements INodeType {
       {
         name: 'n8nApi',
         required: true,
-        displayOptions: {
-          show: {
-            operation: ['update'],
-          },
-        },
       }
     ],
     properties: [
@@ -195,7 +190,18 @@ export class GlobalConstants implements INodeType {
   async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][] > {
     const items = this.getInputData();
     const returnData: INodeExecutionData[] = [];
-    const credentials = await this.getCredentials(GLOBAL_CONSTANTS_CREDENTIALS_NAME) as unknown as GlobalConstantsCredentialsData;
+    
+    let credentials: GlobalConstantsCredentialsData;
+    try {
+      credentials = await this.getCredentials(GLOBAL_CONSTANTS_CREDENTIALS_NAME) as unknown as GlobalConstantsCredentialsData;
+    } catch (error) {
+      throw new Error(`Node does not have any credentials set for "${GLOBAL_CONSTANTS_CREDENTIALS_NAME}". Please ensure a "Global Constants" credential is selected.`);
+    }
+
+    if (!credentials || !credentials.globalConstants) {
+      throw new Error(`Credential "${GLOBAL_CONSTANTS_CREDENTIALS_NAME}" is missing the "globalConstants" field.`);
+    }
+
     const globalConstantsFromCreds = splitConstants(credentials.globalConstants);
 
     const iterationCount = items.length || 1;
