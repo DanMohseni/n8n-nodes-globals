@@ -25,7 +25,6 @@ export class GlobalConstants implements INodeType {
       },
       {
         name: 'n8nApi',
-        required: true,
       }
     ],
     properties: [
@@ -274,7 +273,7 @@ export class GlobalConstants implements INodeType {
           }
 
           const requestOptions: IHttpRequestOptions = {
-            method: 'PUT',
+            method: 'PATCH',
             url: `${baseUrl}/api/v1/credentials/${credentialId}`,
             headers: {
               'X-N8N-API-KEY': apiKey,
@@ -292,7 +291,7 @@ export class GlobalConstants implements INodeType {
           try {
             await this.helpers.httpRequest(requestOptions);
           } catch (error) {
-            throw new Error(`Failed to update credential: ${error.message}`);
+            throw new Error(`Failed to update credential at ${requestOptions.url}: ${error.message}`);
           }
         }
       }
