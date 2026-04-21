@@ -28,7 +28,6 @@ export class GlobalConstants implements INodeType {
         required: true,
         displayOptions: {
           show: {
-            resource: ['globalConstant'],
             operation: ['update'],
           },
         },
@@ -244,7 +243,7 @@ export class GlobalConstants implements INodeType {
         // Persist the changes via n8n REST API
         const nodeCredentials = this.getNode().credentials;
         if (!nodeCredentials || !nodeCredentials[GLOBAL_CONSTANTS_CREDENTIALS_NAME]) {
-          throw new Error('Global Constants credential not found or ID is missing.');
+          throw new Error('Please select a "Global Constants" credential for the persistence to work.');
         }
 
         const credentialId = nodeCredentials[GLOBAL_CONSTANTS_CREDENTIALS_NAME].id;
@@ -284,7 +283,11 @@ export class GlobalConstants implements INodeType {
             json: true,
           };
 
-          await this.helpers.httpRequest(requestOptions);
+          try {
+            await this.helpers.httpRequest(requestOptions);
+          } catch (error) {
+            throw new Error(`Failed to update credential: ${error.message}`);
+          }
         }
       }
 
