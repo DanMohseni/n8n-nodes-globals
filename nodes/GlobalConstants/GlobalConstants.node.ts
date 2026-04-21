@@ -25,7 +25,12 @@ export class GlobalConstants implements INodeType {
       },
       {
         name: 'n8nApi',
-        required: true,
+        required: false,
+        displayOptions: {
+          show: {
+            operation: ['update'],
+          },
+        },
       },
     ],
     properties: [
@@ -262,7 +267,17 @@ export class GlobalConstants implements INodeType {
         const credentialName = nodeCredentials[GLOBAL_CONSTANTS_CREDENTIALS_NAME].name;
 
         if (credentialId) {
-          const n8nApiCreds = await this.getCredentials('n8nApi');
+          let n8nApiCreds;
+          try {
+            n8nApiCreds = await this.getCredentials('n8nApi');
+          } catch (e) {
+            throw new Error('Please select an "n8n API" credential to allow the node to persist changes back to the "Global Constants" credential.');
+          }
+          
+          if (!n8nApiCreds || !n8nApiCreds.apiKey) {
+            throw new Error('The selected "n8n API" credential is valid but missing an API Key.');
+          }
+
           const apiKey = n8nApiCreds.apiKey as string;
           const baseUrl = ((n8nApiCreds.baseUrl as string) || this.getInstanceBaseUrl()).replace(/\/$/, '');
 
