@@ -1,4 +1,4 @@
-import { splitConstants } from '../credentials/CredentialsUtils';
+import { splitConstants, setDeepValue } from '../credentials/CredentialsUtils';
 
 describe('CredentialsUtils', () => {
   describe('splitConstants', () => {
@@ -92,7 +92,37 @@ CONSTANT3=value3
         CONSTANT3: 'value3',
       });
     });
+  });
 
+  describe('setDeepValue', () => {
+    it('should set a simple value', () => {
+      const obj = {};
+      setDeepValue(obj, 'key', 'value');
+      expect(obj).toEqual({ key: 'value' });
+    });
 
-  });    
+    it('should set a nested value', () => {
+      const obj = {};
+      setDeepValue(obj, 'a.b.c', 'value');
+      expect(obj).toEqual({ a: { b: { c: 'value' } } });
+    });
+
+    it('should update an existing nested value', () => {
+      const obj = { a: { b: { c: 'old' } } };
+      setDeepValue(obj, 'a.b.c', 'new');
+      expect(obj).toEqual({ a: { b: { c: 'new' } } });
+    });
+
+    it('should add a field to an existing object', () => {
+      const obj = { a: { b: { c: 'value' } } };
+      setDeepValue(obj, 'a.d', 'new');
+      expect(obj).toEqual({ a: { b: { c: 'value' }, d: 'new' } });
+    });
+
+    it('should handle non-object path segments by overwriting them', () => {
+      const obj = { a: 'not-an-object' };
+      setDeepValue(obj, 'a.b', 'value');
+      expect(obj).toEqual({ a: { b: 'value' } });
+    });
+  });
 });
