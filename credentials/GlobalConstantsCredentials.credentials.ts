@@ -5,8 +5,8 @@ export const GLOBAL_CONSTANTS_CREDENTIALS_NAME = 'globalConstantsApi';
 // eslint-disable-next-line n8n-nodes-base/cred-class-name-unsuffixed
 export class GlobalConstantsCredentials implements ICredentialType {
 	name = GLOBAL_CONSTANTS_CREDENTIALS_NAME;
-	// eslint-disable-next-line n8n-nodes-base/cred-class-field-display-name-missing-api
-	displayName = 'Global Constants';
+	extends = [];
+	displayName = 'Global Constants API';
 
 	properties: INodeProperties[] = [
 		{
