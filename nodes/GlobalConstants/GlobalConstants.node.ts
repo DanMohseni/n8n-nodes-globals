@@ -25,12 +25,7 @@ export class GlobalConstants implements INodeType {
       },
       {
         name: 'n8nApi',
-        required: false,
-        displayOptions: {
-          show: {
-            operation: ['update'],
-          },
-        },
+        required: true,
       },
     ],
     properties: [
