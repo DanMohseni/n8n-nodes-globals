@@ -1,4 +1,4 @@
-import { IExecuteFunctions, INodeExecutionData, INodeType, INodeTypeDescription, IHttpRequestOptions } from 'n8n-workflow';
+import { IExecuteFunctions, INodeExecutionData, INodeType, INodeTypeDescription, IHttpRequestOptions, NodeOperationError } from 'n8n-workflow';
 import { GLOBAL_CONSTANTS_CREDENTIALS_NAME, GlobalConstantsCredentialsData } from '../../credentials/GlobalConstantsCredentials.credentials';
 import { splitConstants, setDeepValue, flattenObject } from '../../credentials/CredentialsUtils';
 
@@ -21,10 +21,6 @@ export class GlobalConstants implements INodeType {
     credentials: [
       {
         name: GLOBAL_CONSTANTS_CREDENTIALS_NAME,
-        required: true,
-      },
-      {
-        name: 'n8nApi',
         required: true,
       },
     ],
@@ -195,17 +191,17 @@ export class GlobalConstants implements INodeType {
     try {
       credentials = await this.getCredentials(GLOBAL_CONSTANTS_CREDENTIALS_NAME) as unknown as GlobalConstantsCredentialsData;
     } catch (error) {
-      throw new Error(`Node does not have any credentials set for "${GLOBAL_CONSTANTS_CREDENTIALS_NAME}". Please ensure a "Global Constants" credential is selected.`);
+      throw new NodeOperationError(this.getNode(), `Node does not have any credentials set for "${GLOBAL_CONSTANTS_CREDENTIALS_NAME}". Please ensure a "Global Constants" credential is selected.`);
     }
 
     if (!credentials) {
-      throw new Error(`Credential "${GLOBAL_CONSTANTS_CREDENTIALS_NAME}" is missing.`);
+      throw new NodeOperationError(this.getNode(), `Credential "${GLOBAL_CONSTANTS_CREDENTIALS_NAME}" is missing.`);
     }
 
     const rawConstants = credentials.format === 'json' ? credentials.globalConstantsJson : credentials.globalConstants;
     
     if (rawConstants === undefined || rawConstants === null) {
-        throw new Error(`Credential "${GLOBAL_CONSTANTS_CREDENTIALS_NAME}" is missing the constants field for format "${credentials.format}".`);
+        throw new NodeOperationError(this.getNode(), `Credential "${GLOBAL_CONSTANTS_CREDENTIALS_NAME}" is missing the constants field for format "${credentials.format}".`);
     }
 
     const globalConstantsFromCreds = splitConstants(rawConstants);
@@ -255,26 +251,19 @@ export class GlobalConstants implements INodeType {
         // Persist the changes via n8n REST API
         const nodeCredentials = this.getNode().credentials;
         if (!nodeCredentials || !nodeCredentials[GLOBAL_CONSTANTS_CREDENTIALS_NAME]) {
-          throw new Error('Please select a "Global Constants" credential for the persistence to work.');
+          throw new NodeOperationError(this.getNode(), 'Please select a "Global Constants" credential for the persistence to work.');
         }
 
         const credentialId = nodeCredentials[GLOBAL_CONSTANTS_CREDENTIALS_NAME].id;
         const credentialName = nodeCredentials[GLOBAL_CONSTANTS_CREDENTIALS_NAME].name;
 
         if (credentialId) {
-          let n8nApiCreds;
-          try {
-            n8nApiCreds = await this.getCredentials('n8nApi');
-          } catch (e) {
-            throw new Error('Please select an "n8n API" credential to allow the node to persist changes back to the "Global Constants" credential.');
-          }
-          
-          if (!n8nApiCreds || !n8nApiCreds.apiKey) {
-            throw new Error('The selected "n8n API" credential is valid but missing an API Key.');
+          const apiKey = credentials.apiKey;
+          if (!apiKey) {
+            throw new NodeOperationError(this.getNode(), 'The selected "Global Constants" credential is missing an n8n API Key. This is required for the "Update" operation.');
           }
 
-          const apiKey = n8nApiCreds.apiKey as string;
-          const baseUrl = ((n8nApiCreds.baseUrl as string) || this.getInstanceBaseUrl()).replace(/\/$/, '');
+          const baseUrl = (credentials.baseUrl || this.getInstanceBaseUrl()).replace(/\/$/, '');
 
           const updateData: any = {
             format: credentials.format,
@@ -312,7 +301,7 @@ export class GlobalConstants implements INodeType {
             if (error.response && error.response.data) {
               errorMessage = `${error.message} - ${JSON.stringify(error.response.data)}`;
             }
-            throw new Error(`Failed to update credential at ${requestOptions.url}: ${errorMessage}`);
+            throw new NodeOperationError(this.getNode(), `Failed to update credential at ${requestOptions.url}: ${errorMessage}`);
           }
         }
       }

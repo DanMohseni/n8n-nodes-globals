@@ -17,6 +17,7 @@ This node uses N8N Credential to store the global variables.
 1. Add "`Global Constants`" node to your workflow.
    ![Global Constants node](./docs/images/usage/1_select_node.png)
 2. In the node configuration, either select an existing credential or create a new one.
+   - **Note:** If you want to use the **Update** operation, you must provide an **n8n API Key** in the credential settings. This allows the node to persist changes back to the credential.
 3. Select the format for your global constants:
    - Key-value pairs format: Use "name=value" pairs, one per line
    - JSON format: Provide constants as a JSON object

@@ -54,6 +54,22 @@ export class GlobalConstantsCredentials implements ICredentialType {
 				},
 			},
 		},
+		{
+			displayName: 'n8n API Key',
+			name: 'apiKey',
+			type: 'string',
+			typeOptions: { password: true },
+			default: '',
+			description: 'The API Key for the n8n API. Required for the "Update" operation.',
+		},
+		{
+			displayName: 'n8n Base URL',
+			name: 'baseUrl',
+			type: 'string',
+			default: '',
+			placeholder: 'http://localhost:5678',
+			description: 'The base URL of your n8n instance. If left empty, the node will try to use the default base URL.',
+		},
 	];
 }
 
@@ -61,4 +77,6 @@ export interface GlobalConstantsCredentialsData {
 	format: 'string' | 'json';
 	globalConstants?: string;
 	globalConstantsJson?: object;
+	apiKey?: string;
+	baseUrl?: string;
 }
