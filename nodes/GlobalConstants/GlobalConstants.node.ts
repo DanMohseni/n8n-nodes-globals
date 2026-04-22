@@ -267,6 +267,8 @@ export class GlobalConstants implements INodeType {
 
           const updateData: any = {
             format: credentials.format,
+            apiKey: credentials.apiKey,
+            baseUrl: credentials.baseUrl,
           };
 
           if (credentials.format === 'json') {
